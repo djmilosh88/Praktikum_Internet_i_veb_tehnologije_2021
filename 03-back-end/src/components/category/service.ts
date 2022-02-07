@@ -3,16 +3,10 @@ import * as mysql2 from 'mysql2/promise';
 import IModelAdapterOptions from '../../common/IModelAdapterOptions.interface';
 import { IAddCategory } from './dto/AddCategory';
 import IErrorResponse from '../../common/IErrorResponse.interface';
-import { resolve } from 'path';
+import BaseService from '../../services/BaseService';
  
-
-class CategoryService {
-    private db: mysql2.Connection;
-
-    constructor(db: mysql2.Connection){
-        this.db = db;
-    }
-
+class CategoryService extends BaseService<CategoryModel> {
+    
     protected async adaptModel(
         row: any,
         options: Partial<IModelAdapterOptions> = { loadParent: false, loadChildren: false }
@@ -38,7 +32,8 @@ class CategoryService {
         return item;
     }
 
-    public async getAll(): Promise<CategoryModel[]> {
+    public async getAll(): Promise<CategoryModel[]|IErrorResponse> {
+        // return await this.getAllByFieldNameFromTable(`category`, `parent__category_id`, null);
         const lista: CategoryModel[] = [];
         
         const sql: string = "SELECT * FROM category;"
@@ -59,7 +54,7 @@ class CategoryService {
         return lista;
     }
 
-
+    // *******************
     // U BAZI NEMA parent__category_id KOLONA ZA SADA - vezba 3, predavanje 2 i 3 za error handlovanje
     // public async getAllByParentCategoryId(parentCategoryId: number): Promise<CategoryModel[]|IErrorResponse> {
     //     return new Promise<CategoryModel[]|IErrorResponse>((resolve) => {
@@ -82,26 +77,18 @@ class CategoryService {
 
     //     return lista;
     // }
+    // *********************
+    
+    // *******************
+    // posle pravljenja BaseService, gornja funkcija se svodi na ovo:
+    // public async getAllByParentCategoryId(parentCategoryId: number): Promise<CategoryModel[]|IErrorResponse> {
+    //     return await this.getAllByFieldNameFromTable(`category`, `parent__category_id`, parentCategoryId)
+    // *******************
+  
+
 
     public async getById(categoryId: number): Promise<CategoryModel|null> {
-        const sql: string = "SELECT * FROM category WHERE category_id = ?;";
-        const [ rows, columns ] = await this.db.execute(sql, [ categoryId ]);
-
-        if (!Array.isArray(rows)) {
-            return null;
-        }
-
-        if (rows.length === 0) {
-            return null;
-        }
-
-        return await this.adaptModel(
-            rows[0],
-            {
-                loadChildren: true,
-                loadParent: true,
-            }
-        )
+        return await this.getByIdFromTable("category", categoryId);
     }
 
     public async add(data: IAddCategory): Promise<CategoryModel|IErrorResponse> {
