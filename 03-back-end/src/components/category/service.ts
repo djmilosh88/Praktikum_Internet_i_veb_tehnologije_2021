@@ -1,6 +1,9 @@
 import CategoryModel from './model';
 import * as mysql2 from 'mysql2/promise';
 import IModelAdapterOptions from '../../common/IModelAdapterOptions.interface';
+import { IAddCategory } from './dto/AddCategory';
+import IErrorResponse from '../../common/IErrorResponse.interface';
+import { resolve } from 'path';
  
 
 class CategoryService {
@@ -57,9 +60,10 @@ class CategoryService {
     }
 
 
-    // U BAZI NEMA parent__category_id KOLONA ZA SADA
-    // public async getAllByParentCategoryId(parentCategoryId: number): Promise<CategoryModel[]> {
-    //     const lista: CategoryModel[] = [];
+    // U BAZI NEMA parent__category_id KOLONA ZA SADA - vezba 3, predavanje 2 i 3 za error handlovanje
+    // public async getAllByParentCategoryId(parentCategoryId: number): Promise<CategoryModel[]|IErrorResponse> {
+    //     return new Promise<CategoryModel[]|IErrorResponse>((resolve) => {
+    //         const lista: CategoryModel[] = [];
         
     //     const sql: string = "SELECT * FROM category WHERE parent__category_id = ?;";
     //     const [ rows, columns ] = await this.db.execute(sql, [ parentCategoryId ]);
@@ -74,7 +78,7 @@ class CategoryService {
     //                 )
     //             )
     //         }
-    //     }
+    //     }        
 
     //     return lista;
     // }
@@ -97,7 +101,36 @@ class CategoryService {
                 loadChildren: true,
                 loadParent: true,
             }
-        );
+        )
+    }
+
+    public async add(data: IAddCategory): Promise<CategoryModel|IErrorResponse> {
+
+        return new Promise<CategoryModel|IErrorResponse> (async resolve => {
+            const sql = `
+                INSERT
+                    category
+                SET
+                    name = ?,
+                    image_path = ?;
+                `;
+            this.db.execute(sql, [ data.name, data.imagePath ])
+                .then(async result => {
+                    // const [ insertInfo ] = result;
+                    const insertInfo: any = result[0];
+
+                    const newCategoryId: number = +(insertInfo?.insertId);
+                    resolve (await this.getById(newCategoryId));
+                })
+
+                // radice posle implementacije error handlovanja
+                // .catch(error => {
+                //     resolve({
+                //         errorCode: error?.errno,
+                //         errorMessage: error?.sqlMessage
+                //     });
+                // });
+        });
     }
 }
 

@@ -1,6 +1,10 @@
 import CategoryService from './service';
 import {Request, Response, NextFunction} from "express";
 import CategoryModel from './model';
+import { IAddCategory, IAddCategoryValidator } from './dto/AddCategory';
+import CategoryRouter from './router';
+import IErrorResponse from '../../common/IErrorResponse.interface';
+import { resourceUsage } from 'process';
 
 class CategoryController {
     private categoryService: CategoryService;
@@ -32,6 +36,19 @@ class CategoryController {
         }
 
         res.send(category);
+    }
+
+    async add(req: Request, res: Response, next: NextFunction) {
+        const data = req.body;
+
+        if (!IAddCategoryValidator(data)) {
+            res.status(400).send(IAddCategoryValidator.errors);
+            return;
+        }
+
+        const result = await this.categoryService.add(data as IAddCategory);
+
+        res.send(result);
     }
 }
 
